@@ -2,6 +2,9 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 'On');
 
+$month = array_key_exists('m', $_GET) && preg_match('/^\d\d?$/i', $_GET['m']) ? $_GET['m'] : date('m');
+$year = array_key_exists('y', $_GET) && preg_match('/^\d\d\d\d$/i', $_GET['y']) ? $_GET['y'] : date('Y');
+
 $connection = mysqli_connect('localhost', 'root') or die ('Error connecting to mysql server: '.mysqli_error($connection));
 
 if (!($result = mysqli_query($connection, 'CREATE DATABASE IF NOT EXISTS efg_mitarbeiterplan'))):
@@ -45,19 +48,33 @@ if (!($result = mysqli_query($connection, "CREATE TABLE IF NOT EXISTS dates (
 	die ('Error creating table efg_mitarbeiterplan.dates'.mysqli_error($connection));
 endif;
 
-/*
-
-('2016-07-03', NULL, 'Kinder-Gottesdienst', NULL, NULL, 'Thomas Weber', 'Marc Warnecke', 'Claudia Dormeyer', 'Simon Hoffmann', NULL, 'M. Bernardi / J. Lips', 'Barbara Husemann / Pia Warnecke', NULL, 'Alexander Plaß', 'Dominik Gadowski', 'Elke Franz / Iris Goronczy', 'Vietnam. Gemeinde', 'MIRS Gemeinde', 'Thea Schmitt', 'H.E. Wilms / Trier', NULL, NULL),
-('2016-07-10', 'Abendmahl', 'Fam. Binder / Pakistan', NULL, NULL, 'Wilfried Schmitt', 'Thomas Weber', 'Daniel Mertins', 'Dominik Schreiber / Mario Rudloff', 'Dominik Schreiber', 'M. Weber / C. Zuffinger / A. Köhler', 'Johanna Hoffmann / Iris Goronczy', NULL, 'Aaron Petry', 'Marvin Goronczy', 'Ilona Lips / Bärbel Tappert', 'Ilona Lips', 'Marion Brand / Marina Hobohm', NULL, NULL, 'Wilfried Schmitt', 'Andreas Petry / Jonas Weber / Denise Schmutz'),
-('2016-07-17', NULL, 'SOLA MANNHEIM', NULL, NULL, 'Henry Gerzen', 'Dominik Schreiber', 'Iris Goronczy', 'Simon Hoffmann', NULL, 'S. Petry / C. Weber / F. Hoffmann / D. Kubillus', 'Johanna Hoffmann / Iris Goronczy', NULL, 'Daniel Mertins', 'Alec Warnecke', 'Fam. Williams', 'Fam. Ene', 'Fam. Schmitt', 'Marion Brand', 'H.E. Wilms / Mannheim', NULL, NULL),
-('2016-07-24', NULL, 'Diakonische Aufgaben', NULL, NULL, 'Markus Sander', 'Denise Schmutz', 'Andreas Petry', 'Dominik Schreiber / Mario Rudloff', 'Dominik Schreiber', 'Ferien', NULL, NULL, 'David Williams', 'Christian Hessenauer', 'Erika Pankratz / Silke v. Schwech', 'Petra Plaß', 'Elke Franz / Iris Goronczy', 'Denise Schmutz', NULL, NULL, NULL),
-('2016-07-31', 'Seniorenkreis', 'Allianz-Arbeit', NULL, NULL, 'Hans-Erhard Wilms', 'Bärbel Wilms', 'Seniorenkreis', NULL, NULL, 'Ferien', NULL, NULL, 'Jonas Weber', 'Dominik Gadowski', 'Seniorenkreis', 'Caro Weber', 'Bärbel Wilms', 'Seniorenkreis', NULL, NULL, NULL)
-*/
-if (!($result = mysqli_query($connection, "
-INSERT IGNORE INTO dates (date_id) VALUES ('2016-09-04'), ('2016-09-11'), ('2016-09-18'), ('2016-09-25'), ('2016-10-02')
-"))):
+if (!($result = mysqli_query($connection, "INSERT IGNORE INTO dates (date_id) VALUES ".join(', ', array_map(function($s) {return "('".$s."')";}, getDateForSpecificDayBetweenDates($year."-".$month."-01", "+3 months")))))):
 	die ('Error inserting values into database: '.mysqli_error($connection));
 endif;
+
+/** @see http://stackoverflow.com/a/7213207/1168892 */
+function getDateForSpecificDayBetweenDates($start, $end, $weekday = 0){
+	$weekdays="Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday";
+
+	$arr_weekdays = explode(",", $weekdays);
+	$weekday = $arr_weekdays[$weekday];
+	if (!$weekday)
+		die("Invalid Weekday!");
+
+	$start = strtotime("+0 day", strtotime($start) );
+	$end = strtotime($end);
+
+	$dateArr = array();
+	$friday = strtotime($weekday, $start);
+	while($friday <= $end)
+	{
+		$dateArr[] = date("Y-m-d", $friday);
+		$friday = strtotime("+1 weeks", $friday);
+	}
+	$dateArr[] = date("Y-m-d", $friday);
+
+	return $dateArr;
+}
 
 function to_input($str, $name_id, $name_postfix) {
 	return "<input name=\"".$name_id."_".$name_postfix."\" value=\"".$str."\">"; 
@@ -94,7 +111,7 @@ endif; ?>
 
 <?php // if ($_SERVER['REQUEST_METHOD'] === 'GET'): // (need to send if POST as well -- otherwise screen is white after form submission)
 
-if (!($result = mysqli_query($connection, "SELECT *, DATE_FORMAT(date_id, '%d-%m-%Y') as date_id FROM dates WHERE MONTH(date_id) = MONTH(NOW()) and YEAR(date_id) = YEAR(NOW())"))):
+if (!($result = mysqli_query($connection, "SELECT *, DATE_FORMAT(date_id, '%d-%m-%Y') as date_id FROM dates WHERE MONTH(date_id) = ".$month." and YEAR(date_id) = ".$year))):
 	die ('Error selecting values from database: '.mysqli_error($connection));
 endif;
 
@@ -105,7 +122,7 @@ endwhile;
 ?>
 <!doctype html>
 <meta charset="utf-8">
-<title>Mitarbeiterplan <?php echo date('F Y'); ?></title>
+<title>Mitarbeiterplan <?php echo date('F Y', strtotime($year."-".$month."-01")); ?></title>
 <style>
 * {
 	margin: 0;
@@ -199,7 +216,7 @@ h1 {
 	}
 }
 </style>
-<h1>Mitarbeiterplan <?php echo date("F Y"); ?></h1>
+<h1>Mitarbeiterplan <?php echo date('F Y', strtotime($year."-".$month."-01")); ?></h1>
 <form name="mitarbeiterplan" method="POST" action=".">
 <table>
 	<tr><th></th><?php foreach ($dates as $date): ?><th><?php echo str_replace('-', '.', $date['date_id']); ?></th><?php endforeach; ?></tr>
