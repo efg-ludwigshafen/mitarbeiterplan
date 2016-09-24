@@ -77,7 +77,7 @@ function getDateForSpecificDayBetweenDates($start, $end, $weekday = 0){
 }
 
 function to_input($str, $name_id, $name_postfix) {
-	return "<input name=\"".$name_id."_".$name_postfix."\" value=\"".$str."\">"; 
+	return "<input name=\"".$name_id."_".$name_postfix."\" value=\"".$str."\" list=\"list_".$name_postfix."\">"; 
 }
 ?>
 
@@ -119,6 +119,30 @@ $dates = [];
 while ($row = mysqli_fetch_array($result)):
 	$dates[] = $row;
 endwhile;
+
+$rows = [
+	['Gottesdienst', 'service'],
+	['Opfer', 'offering'],
+	['Predigtthema', 'sermon_subject'],
+	['Predigttext', 'sermon_text'],
+	['Predigt', 'pastor', 'section-start'],
+	['Leitung', 'moderator'],
+	['Schriftlesung', 'lector'],
+	['Anbetung', 'worship_pastor', 'section-start'],
+	['Klavier', 'pianist'],
+	['Kindergottesdienst', 'childrens_service', 'section-start'],
+	['Kleinkinderbetreuung', 'toddler_care'],
+	['Begrüßung', 'welcome', 'section-start'],
+	['Tontechnik', 'audio_engineer'],
+	['Beamer', 'video_engineer'],
+	['Kaffee', 'coffee'],
+	['Putzen Hemshofstraße', 'clean_hemshofstrasse', 'section-start'],
+	['Putzen Böhlstraße', 'clean_boehlstrasse'],
+	['Blumenschmuck', 'flowers', 'section-start'],
+	['Sonstige Predigtdienste', 'other_preachers'],
+	['Abendmahl leiten', 'supper_lead', 'section-start'],
+	['Abendmahl austeilen', 'supper_distribute']
+];
 ?>
 <!doctype html>
 <meta charset="utf-8">
@@ -220,35 +244,18 @@ h1 {
 <form name="mitarbeiterplan" method="POST" action=".">
 <table>
 	<tr><th></th><?php foreach ($dates as $date): ?><th><?php echo str_replace('-', '.', $date['date_id']); ?></th><?php endforeach; ?></tr>
-	<?php foreach ([
-		['Gottesdienst', 'service'],
-		['Opfer', 'offering'],
-		['Predigtthema', 'sermon_subject'],
-		['Predigttext', 'sermon_text'],
-		['Predigt', 'pastor', 'section-start'],
-		['Leitung', 'moderator'],
-		['Schriftlesung', 'lector'],
-		['Anbetung', 'worship_pastor', 'section-start'],
-		['Klavier', 'pianist'],
-		['Kindergottesdienst', 'childrens_service', 'section-start'],
-		['Kleinkinderbetreuung', 'toddler_care'],
-		['Begrüßung', 'welcome', 'section-start'],
-		['Tontechnik', 'audio_engineer'],
-		['Beamer', 'video_engineer'],
-		['Kaffee', 'coffee'],
-		['Putzen Hemshofstraße', 'clean_hemshofstrasse', 'section-start'],
-		['Putzen Böhlstraße', 'clean_boehlstrasse'],
-		['Blumenschmuck', 'flowers', 'section-start'],
-		['Sonstige Predigtdienste', 'other_preachers'],
-		['Abendmahl leiten', 'supper_lead', 'section-start'],
-		['Abendmahl austeilen', 'supper_distribute']
-	] as $k): ?><tr<?php if (count($k) == 3) { echo ' class="'.$k[2].'"'; } ?>><th><?php echo $k[0]; ?></th><?php foreach ($dates as $d): ?><td><?php echo to_input($d[$k[1]], $d['date_id'], $k[1]); ?></td><?php endforeach; ?></tr>
+	<?php foreach ($rows as $row): ?><tr<?php if (count($row) == 3) { echo ' class="'.$row[2].'"'; } ?>><th><?php echo $row[0]; ?></th><?php foreach ($dates as $d): ?><td><?php echo to_input($d[$row[1]], $d['date_id'], $row[1]); ?></td><?php endforeach; ?></tr>
 	<?php endforeach; ?>
 </table>
 <p style="text-align:right">
 	<button>Speichern</button>
 </p>
 </form>
+<div style="display:none;visibility:hidden" aria-hidden="true">
+	<?php foreach ($rows as $row): ?>
+	<datalist id="list_<?php echo $row[1]; ?>"><?php foreach (array_reduce($dates, function($options, $date) use ($row) { if ($date[$row[1]] != '' && !in_array($date[$row[1]], $options)) { $options[] = $date[$row[1]]; } return $options; }, []) as $option): ?><option value="<?php echo $option; ?>"><?php endforeach; ?></datalist>
+	<?php endforeach; ?>
+</div>
 <script>
 function currentContentColIndex($i) {
 	return $i.parentElement.cellIndex - 1;
