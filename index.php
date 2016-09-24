@@ -77,7 +77,7 @@ function getDateForSpecificDayBetweenDates($start, $end, $weekday = 0){
 }
 
 function to_input($str, $name_id, $name_postfix) {
-	return "<input name=\"".$name_id."_".$name_postfix."\" value=\"".$str."\" list=\"list_".$name_postfix."\">"; 
+	return "<input name=\"".$name_id."_".$name_postfix."\" value=\"".$str."\" list=\"list_".$name_postfix."\" data-mode=\"navigation\">"; 
 }
 ?>
 
@@ -260,9 +260,11 @@ h1 {
 function currentContentColIndex($i) {
 	return $i.parentElement.cellIndex - 1;
 }
+
 function currentContentRowIndex($i) {
 	return $i.parentElement.parentElement.rowIndex - 1;
 }
+
 function focusContentCell(column, row) {
 	var trs = document.querySelector('table').querySelectorAll('tr');
 	var targetTr = trs[Math.min(trs.length-1, Math.max(1, row+1))];
@@ -270,6 +272,15 @@ function focusContentCell(column, row) {
 	var targetTd = tds[Math.min(tds.length-1, Math.max(1, column+1))];
 	targetTd.firstChild.focus();
 }
+
+function getCookie(name) {
+	return unescape((document.cookie.match(name + '=([^;]+)(;|$)') || Array(2))[1] || '');
+}
+
+if (getCookie('col') && getCookie('row')) {
+	focusContentCell(parseInt(getCookie('col')), parseInt(getCookie('row')));
+}
+
 document.mitarbeiterplan.addEventListener('keydown', function(e) {
 	if (!e.altKey && e.ctrlKey && !e.metaKey && !e.shiftKey) {
 		switch (e.keyCode) {
@@ -284,6 +295,13 @@ document.mitarbeiterplan.addEventListener('keydown', function(e) {
 				document.mitarbeiterplan.submit();
 				break;
 		}
+	}
+});
+
+window.addEventListener('beforeunload', function(e) {
+	if (document.activeElement.nodeName === 'INPUT') {
+		document.cookie = 'col=' + currentContentColIndex(document.activeElement); 
+		document.cookie = 'row=' + currentContentRowIndex(document.activeElement);
 	}
 });
 
