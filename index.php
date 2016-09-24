@@ -177,7 +177,6 @@ td input {
 }
 table input {
 	display: block;
-	padding: 0 1rem;
 	height: 2rem;
 	width: 100%;
 	border: none;
@@ -224,7 +223,7 @@ h1 {
 		display: block;
 	}
 	html {
-		font-size: 12pt;
+		font-size: 11pt;
 	}
 	button {
 		display: none;
@@ -237,6 +236,14 @@ h1 {
 	table input {
 		height: 1.5rem;
 		text-overflow: clip;
+	}
+	th,
+	th input,
+	td input {
+		padding: 0 .5rem;
+	}
+	::-webkit-calendar-picker-indicator {
+		display: none;
 	}
 }
 </style>
