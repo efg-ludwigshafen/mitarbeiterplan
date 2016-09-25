@@ -214,9 +214,6 @@ $rows = [
 	button:active {
 		background-color: #449bd7;
 	}
-	h1 {
-		display: none;
-	}
 	.currentmonth input {
 		display: inline-block;
 		width: auto;
@@ -232,9 +229,6 @@ $rows = [
 		width: 3em;
 	}
 	@media print {
-		h1 {
-			display: block;
-		}
 		html {
 			font-size: 11pt;
 		}
@@ -243,12 +237,19 @@ $rows = [
 		}
 		th,
 		td {
-			line-height: 1.5;
 			border-color: #999;
 		}
 		table input {
-			height: 1.5rem;
 			text-overflow: clip;
+			background: none;
+		}
+		tr:first-child th,
+		tr:first-child td {
+			background-color: #ddd;
+		}
+		th:first-cild,
+		td:first-child {
+			background-color: #efefef;
 		}
 		th,
 		th input,
@@ -260,7 +261,6 @@ $rows = [
 		}
 	}
 	</style>
-	<h1>Mitarbeiterplan <?php echo strftime('%B %Y', strtotime($year."-".$month."-01")); ?></h1>
 	<form name="mitarbeiterplan" method="POST" action=".">
 	<table>
 		<colgroup>
